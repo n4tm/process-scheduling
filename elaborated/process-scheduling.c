@@ -18,8 +18,6 @@ int main(int argc, char *argv[]) {
     cp_process current_process;
     construct_process(&current_process, AS_A_PRODUCER);
 
-    cp_process_queue q = construct_process_queue(current_process, producers_qty, consumers_qty);
-
     while (true) {
         peterson_solution(current_process, q);
         sleep(1);

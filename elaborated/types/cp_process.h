@@ -1,13 +1,13 @@
 #include <unistd.h>
 
 typedef struct cp_process {
-  unsigned int id;
+  pid_t id;
   void* act;
 } cp_process;
 
 void initialize_process(cp_process *p, unsigned int type) {
   cp_process temp = {
-    (unsigned int)getpid(),
+    getpid(),
     type == 0 ? produce : consume
   };
   p = &temp;
