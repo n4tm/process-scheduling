@@ -2,6 +2,7 @@
 #define BUFFER_H
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #define BUFFER_CAPACITY 64
@@ -15,6 +16,7 @@ typedef struct buffer_t {
 } buffer_t;
 
 buffer_t buffer;
+char *buffer_content;
 
 static char _buffer[BUFFER_CAPACITY];
 static int _current_buffer_size;
@@ -40,11 +42,13 @@ void initialize_buffer() {
     _remove_item,
     _clear
   };
+  buffer_content = (char*)malloc(128);
   buffer.clear();
   _file = fopen(BUFFER_FILE_PATH, "w");
 }
 
 void close_buffer_file() {
+  free(buffer_content);
   fclose(_file);
 }
 

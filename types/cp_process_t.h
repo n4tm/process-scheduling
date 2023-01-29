@@ -2,7 +2,6 @@
 #define CP_PROCESS_T_H
 
 #include "buffer.h"
-#include <stdlib.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <time.h>
@@ -25,8 +24,6 @@ void construct_process(cp_process_t *p, pid_t pid, int type) {
 }
 
 void commit_to_buffer(cp_process_t p) {
-  char *buffer_content = (char*)malloc(128);
-
   const char *process_action_desc = p.type == PRODUCER ? "Producer inserted" : "Consumer removed";
 
   struct timeval tp;
