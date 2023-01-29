@@ -1,0 +1,7 @@
+{
+  "files.associations": {
+    "cp_process_t.h": "c",
+    "stdio.h": "c",
+    "string.h": "c"
+  }
+}

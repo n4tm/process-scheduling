@@ -3,10 +3,14 @@
         {
             "name": "Linux",
             "includePath": [
-                "/usr/include"
+                "/usr/include",
+                "/usr/lib/gcc/x86_64-linux-gnu/11/include",
+                "${workspaceFolder}/methods",
+                "${workspaceFolder}/types"
             ],
             "defines": [],
-            "intelliSenseMode": "linux-gcc-x64"
+            "intelliSenseMode": "linux-gcc-x64",
+            "cStandard": "c99"
         }
     ],
     "version": 4
