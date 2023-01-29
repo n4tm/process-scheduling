@@ -45,11 +45,26 @@ void initialize_buffer() {
   buffer_content = (char*)malloc(128);
   buffer.clear();
   _file = fopen(BUFFER_FILE_PATH, "w");
+  if (_file == NULL) {
+    printf("Error: failed to open file (path: %s).\n", BUFFER_FILE_PATH);
+    exit(-1);
+  }
+}
+
+void watch_buffer_file() {
+  const char *watch_command = "watch -n 0.1 cat buffer.txt";
+  if (system(watch_command) == -1) {
+    printf("Error: failed when trying to watch for buffer file (used command: %s).\n", watch_command);
+    exit(-1);
+  }
 }
 
 void close_buffer_file() {
   free(buffer_content);
-  fclose(_file);
+  if (fclose(_file) == -1) {
+    printf("Error: failed to close file (path: %s).\n", BUFFER_FILE_PATH);
+    exit(-1);
+  };
 }
 
 #endif

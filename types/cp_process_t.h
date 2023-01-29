@@ -27,7 +27,10 @@ void commit_to_buffer(cp_process_t p) {
   const char *process_action_desc = p.type == PRODUCER ? "Producer inserted" : "Consumer removed";
 
   struct timeval tp;
-  gettimeofday(&tp, 0);
+  if (gettimeofday(&tp, 0) == -1) {
+    printf("Error: gettimeofday failed.\n");
+    exit(-1);
+  }
   time_t curtime = tp.tv_sec;
   struct tm *t = localtime(&curtime);
 
@@ -35,9 +38,14 @@ void commit_to_buffer(cp_process_t p) {
 
   if (snprintf(buffer_content, 128, buffer_content_format, t->tm_hour-3, t->tm_min, t->tm_sec,
                (int)tp.tv_usec/1000, process_action_desc, p.id, _buffer) < 0) {
-    // throw exception
+    printf("Error: failed to write in buffer content.\n");
+    exit(-1);
   }
   fwrite(buffer_content, 1, sizeof(buffer_content), _file);
+  if (ferror(_file) != 0) {
+    printf("Error: failed to write into buffer file.\n");
+    exit(-1);
+  }
 }
 
 #endif
