@@ -7,7 +7,7 @@
 #include <unistd.h>
 #include <sys/mman.h>
 #include <fcntl.h>
-#include "aupe.h"
+#include "apue.h"
 
 #define TRUE 1
 #define FALSE 0
@@ -39,11 +39,11 @@ int wakeup_process(pid_t process_id) {
 }
 
 char* produce_item() { 
-	return "|";
+	return "#";
 }
 
 void consume_item(char *item) {
-    printf("Item consumed, count: %d", *count);
+    
 }
 
 void insert_item(const char *item) {
@@ -58,7 +58,7 @@ void insert_item(const char *item) {
     fclose(file);
 }
 
-int remove_item() {
+char *remove_item() {
     FILE *file;
     file = fopen(FILE_PATH, "a");
     if (file == NULL) {
@@ -71,6 +71,8 @@ int remove_item() {
     ftruncate(fileno(file), position);
 
     fclose(file);
+
+    return "#";
 }
 
 void producer() {
@@ -87,7 +89,7 @@ void producer() {
 }
 
 void consumer() {
-	char item;
+	char *item;
 	
 	while (TRUE) {
 		if (*count == 0) sleep_process();
@@ -99,9 +101,19 @@ void consumer() {
 	}
 }
 
+void create_buffer() {
+    FILE *file;
+    file = fopen(FILE_PATH, "w");
+    if (file == NULL) {
+        perror("Error: fopens");
+        exit(1);
+    }
 
-int *init_count(char *shm_name) {
-	int shm = shm_open(shm_name, O_CREAT | O_RDWR, 0666);
+    fclose(file);
+}
+
+void init_count() {
+	int shm = shm_open("COUNT", O_CREAT | O_RDWR, 0666);
 	if (shm == -1) {
 		perror("Error: shm_open");
 		exit(1);
@@ -112,49 +124,30 @@ int *init_count(char *shm_name) {
 		exit(1);
 	}
 	
-	int *ptr = mmap(NULL, SHM_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, shm, 0);
-	if (ptr == MAP_FAILED) {
+	count = mmap(NULL, SHM_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, shm, 0);
+	if (count == MAP_FAILED) {
 		perror("Error: mmap");
 		exit(1);
-	}
+	};
 
-	close(shm);
-
-    if (access(FILE_PATH, F_OK) == 0) {
-        FILE *file;
-        file = fopen(FILE_PATH, "r");
-        if (file == NULL) {
-            perror("Error: fopens");
-            exit(1);
-        }
-
-        if (feof(file)) {
-            *ptr = 0;
-        }
-
-        fclose(file);
-    } else {
-        *ptr = 0;
-    }
-
-    if (*ptr < 0) {
-        *ptr = 0;
-    }
-
-	return ptr;
+    *count = 0;
+    close(shm);
 }
 
 int main(int argc, char *argv[]) {
-	count = init_count("COUNT");
+    init_count();
+    create_buffer();
 
     pid_t pid = fork();
 
     if (pid == 0) {
-        producer();
         consumer_pid = getppid();
+        printf("Producer with PID: %d\n", getpid());
+        producer();
     } else {
-        consumer();
         producer_pid = pid;
+        printf("Consumer with PID: %d\n", getpid());
+        consumer();
     }
 
 	munmap(count, SHM_SIZE);
