@@ -47,35 +47,30 @@ int main(int argc, char* argv[]) {
     initialize_buffer();
     (*initialize_chosen_method)();
 
-    cp_process_t producer;                  // parent process is a producer
+    cp_process_t producer;
     cp_process_t consumer;
-    pid_t consumer_pid;
+    pid_t producer_pid;
 
-    pid_t file_watcher_pid;
-    if ((file_watcher_pid = fork()) == -1) {
-        printf("Error: Failed to create child process (parent pid: %d).\n", producer.id);
-    } else if (file_watcher_pid == 0) {
-        watch_buffer_file();
-    } else if (file_watcher_pid > 0) {
-        if ((consumer_pid = fork()) == -1) {    // child process is a consumer
-            printf("Error: Failed to create child process (parent pid: %d).\n", producer.id);
-            exit(EXIT_FAILURE);
-        } else if (consumer_pid > 0) {
-            construct_process(&producer, AS_A_PRODUCER);
-            while (true) {
-                (*apply_chosen_method)(&producer);
-                sleep(1);
-            }
-        } else if (consumer_pid == 0) {
-            construct_process(&consumer, AS_A_CONSUMER);
-            while (true) {
-                (*apply_chosen_method)(&consumer);
-                sleep(1);
-            }
+    if ((producer_pid = fork()) == -1) {
+        printf("Error: Failed to create child process (parent pid: %d).\n", getpid());
+        exit(EXIT_FAILURE);
+    } else if (producer_pid > 0) {
+        construct_process(&producer, AS_A_PRODUCER);    // parent process is a producer
+        while (true) {
+            (*apply_chosen_method)(&producer);
+            sleep(1);
+        }
+    } else if (producer_pid == 0) {
+        construct_process(&consumer, AS_A_CONSUMER);    // child process is a consumer
+        while (true) {
+            (*apply_chosen_method)(&consumer);
+            sleep(1);
         }
     }
 
-    if (consumer_pid > 0) {
+    
+
+    if (producer_pid > 0) {
         close_buffer_file();
     }
 
