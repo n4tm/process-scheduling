@@ -19,6 +19,9 @@
 
 int *count;
 
+pid_t producer_pid;
+pid_t consumer_pid;
+
 int sleep_process() {
     pid_t pid = getpid();
     kill(pid, SIGSTOP);
@@ -28,7 +31,7 @@ int wakeup_process(pid_t process_id) {
     int status = kill(process_id, SIGCONT);
 
     if (status == -1) {
-        perror("kill");
+        perror("Error: kill");
         exit(1);
     }
 
@@ -40,7 +43,7 @@ char* produce_item() {
 }
 
 void consume_item(char *item) {
-    printf(strcat("Item consumed: %s\n", item));
+    printf("Item consumed, count: %d", *count);
 }
 
 void insert_item(const char *item) {
@@ -79,19 +82,19 @@ void producer() {
 		insert_item(item);
 		*count += 1;
         sleep(1);
-		if (*count == 1) wakeup_process(getpid() - 1);
+		if (*count == 1) wakeup_process(consumer_pid);
     }
 }
 
-void consumer(void) {
+void consumer() {
 	char item;
 	
 	while (TRUE) {
 		if (*count == 0) sleep_process();
         item = remove_item();
         *count -= 1;
-        sleep(1);
-        if (*count == N-1) wakeup_process(getpid() - 1);
+        sleep(3);
+        if (*count == N-1) wakeup_process(producer_pid);
         consume_item(item);
 	}
 }
@@ -144,9 +147,15 @@ int *init_count(char *shm_name) {
 int main(int argc, char *argv[]) {
 	count = init_count("COUNT");
 
-	producer();
-    // consumer();
-	
+    pid_t pid = fork();
+
+    if (pid == 0) {
+        producer();
+        consumer_pid = getppid();
+    } else {
+        consumer();
+        producer_pid = pid;
+    }
 
 	munmap(count, SHM_SIZE);
 	shm_unlink("COUNT");
