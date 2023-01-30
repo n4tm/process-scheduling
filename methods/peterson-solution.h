@@ -12,7 +12,6 @@ void _enter_region(pid_t pid) {
   int parent_id = getppid();
   bool is_orphan = parent_id != pid-1;
   int other = is_orphan ? pid + 1 : parent_id;
-  printf("current: %d / other: %d\n", pid, other);
   interested[pid] = true;
   *turn = pid;
   while (*turn == pid && interested[other] == true) sleep(1);

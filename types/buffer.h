@@ -9,7 +9,6 @@
 
 #define ALLOCATE_SHARED_MEMORY(sz) mmap(NULL, sz, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0)
 #define BUFFER_CAPACITY 64
-#define BUFFER_CONTENT_CAPACITY 128
 #define BUFFER_FILE_PATH "./buffer.txt"
 #define PRODUCER 0
 
@@ -20,10 +19,9 @@ typedef struct buffer_t {
 } buffer_t;
 
 buffer_t buffer;
-char buffer_content[BUFFER_CONTENT_CAPACITY];
 
-char *_buffer;
-int *_current_buffer_size;
+static char *_buffer;
+static int *_current_buffer_size;
 FILE* _file;
 
 void _insert_item() {
@@ -32,8 +30,8 @@ void _insert_item() {
 }
 
 void _remove_item() {
-  _buffer[*_current_buffer_size];
-  if (*_current_buffer_size > 0) (*_current_buffer_size)--;
+  if (*_current_buffer_size <= 0) return;
+  _buffer[--(*_current_buffer_size)] = '.';
 }
 
 void _clear() {
@@ -53,13 +51,6 @@ void initialize_buffer() {
     printf("Error: file not found (path: %s).\n", BUFFER_FILE_PATH);
     exit(EXIT_FAILURE);
   }
-}
-
-void close_buffer_file() {
-  if (fclose(_file) == -1) {
-    printf("Error: failed to close file (path: %s).\n", BUFFER_FILE_PATH);
-    exit(EXIT_FAILURE);
-  };
 }
 
 #endif

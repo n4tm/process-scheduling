@@ -31,7 +31,6 @@ void commit_to_buffer(cp_process_t* p) {
   }
 
   fclose(_file);
-
 }
 
 #endif

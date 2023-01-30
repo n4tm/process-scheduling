@@ -58,20 +58,12 @@ int main(int argc, char* argv[]) {
         construct_process(&producer, AS_A_PRODUCER);    // parent process is a producer
         while (true) {
             (*apply_chosen_method)(&producer);
-            sleep(1);
         }
     } else if (producer_pid == 0) {
         construct_process(&consumer, AS_A_CONSUMER);    // child process is a consumer
         while (true) {
             (*apply_chosen_method)(&consumer);
-            sleep(1);
         }
-    }
-
-    
-
-    if (producer_pid > 0) {
-        close_buffer_file();
     }
 
     return 0;
