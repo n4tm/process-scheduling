@@ -5,11 +5,12 @@
 #include <stdbool.h>
 #include <unistd.h>
 
-pid_t *turn;
-bool *interested;
+pid_t* turn;
+bool* interested;
 
 void _enter_region(pid_t pid) {
-  int other = pid + 1;
+  int parent_id = getppid();
+  int other = parent_id == 1 ? pid + 1 /*or + 2*/ : parent_id;
   interested[pid] = true;
   *turn = pid;
   while (*turn == pid && interested[other] == true) sleep(1);
@@ -19,11 +20,11 @@ void _leave_region(pid_t pid) {
   interested[pid] = false;
 }
 
-void peterson_solution(cp_process_t process) {
-  _enter_region(process.id);
-  process.act();
+void peterson_solution(cp_process_t* process) {
+  _enter_region(process->id);
+  process->act();
   commit_to_buffer(process);
-  _leave_region(process.id);
+  _leave_region(process->id);
 }
 
 void initialize_peterson_solution_shared_slots() {

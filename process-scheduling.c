@@ -1,17 +1,23 @@
 #include "methods/peterson-solution.h"
 #include <getopt.h>
-#include <unistd.h>
 
 #define AS_A_PRODUCER 0
 #define AS_A_CONSUMER 1
-#define METHODS_QTY 4
+#define METHODS_QTY 1
 #define GET_VAR_NAME(var) #var
 
-const void (*methods[])(cp_process_t) = {
+const void (*methods[])(cp_process_t*) = {
     peterson_solution,
     // sleep_wakeup_action,
     // semaphore_action,
     // monitor_action
+};
+
+const char* method_names[] = {
+    "peterson_solution",
+    // "sleep_wakeup_action",
+    // "semaphore_action",
+    // "monitor_action"
 };
 
 const void (*method_shared_slots_initializers[])() = {
@@ -21,44 +27,51 @@ const void (*method_shared_slots_initializers[])() = {
     // initialize_monitor_shared_slots
 };
 
-void show_help(char *name);
-void handle_args(int argc, char *argv[], char* method_name);
-int set_chosen_method(void (*chosen_method)(cp_process_t), void (*initialize_chosen_method)(), char* method_name);
+void show_help(char* name);
+void handle_args(int argc, char* argv[], char* method_name);
+int get_method_index(char* method_name);
 
-int main(int argc, char *argv[]) {
-    char* method_name;
+int main(int argc, char* argv[]) {
+    char method_name[18];
     handle_args(argc, argv, method_name);
 
-    void (*apply_chosen_method)(cp_process_t);
-    void (*initialize_chosen_method)();
-    if (set_chosen_method(apply_chosen_method, initialize_chosen_method, method_name) == -1) {
+    int method_index = get_method_index(method_name);
+    if (method_index == -1) {
         printf("Error: Invalid method name.\n");
         show_help(argv[0]);
     };
 
+    const void (*apply_chosen_method)(cp_process_t*) = methods[method_index];
+    const void (*initialize_chosen_method)() = method_shared_slots_initializers[method_index];
+    
     initialize_buffer();
+    (*initialize_chosen_method)();
 
     cp_process_t producer;                  // parent process is a producer
-    construct_process(&producer, getpid(), AS_A_PRODUCER);
-
     cp_process_t consumer;
     pid_t consumer_pid;
-    if ((consumer_pid = fork()) == -1) {    // child process is a consumer
+
+    pid_t file_watcher_pid;
+    if ((file_watcher_pid = fork()) == -1) {
         printf("Error: Failed to create child process (parent pid: %d).\n", producer.id);
-        exit(EXIT_FAILURE);
-    } else if (consumer_pid > 0) {
-        construct_process(&consumer, consumer_pid, AS_A_CONSUMER);
+    } else if (file_watcher_pid == 0) {
         watch_buffer_file();
-        initialize_chosen_method();
-        while (true) {
-            apply_chosen_method(producer);
-            sleep(1);
-        }
-    } else if (consumer_pid == 0) {
-        initialize_chosen_method();
-        while (true) {
-            apply_chosen_method(consumer);
-            sleep(1);
+    } else if (file_watcher_pid > 0) {
+        if ((consumer_pid = fork()) == -1) {    // child process is a consumer
+            printf("Error: Failed to create child process (parent pid: %d).\n", producer.id);
+            exit(EXIT_FAILURE);
+        } else if (consumer_pid > 0) {
+            construct_process(&producer, AS_A_PRODUCER);
+            while (true) {
+                (*apply_chosen_method)(&producer);
+                sleep(1);
+            }
+        } else if (consumer_pid == 0) {
+            construct_process(&consumer, AS_A_CONSUMER);
+            while (true) {
+                (*apply_chosen_method)(&consumer);
+                sleep(1);
+            }
         }
     }
 
@@ -69,7 +82,7 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-void show_help(char *name) {
+void show_help(char* name) {
     fprintf(stderr, "[usage] %s <options>\n\
     -m METHOD_NAME method to be used for the process scheduling\n\
     \n\
@@ -81,22 +94,20 @@ void show_help(char *name) {
     exit(EXIT_FAILURE);
 }
 
-void handle_args(int argc, char *argv[], char* method_name) {
+void handle_args(int argc, char* argv[], char* method_name) {
     if (argc < 2) show_help(argv[0]);
 
     int opt;
     opt = getopt(argc, argv, "m:");
 
-    if (opt == 'm') method_name = optarg;
+    if (opt == 'm') strcpy(method_name, optarg);
     else show_help(argv[0]);
 };
 
-int set_chosen_method(void (*chosen_method)(cp_process_t), void (*initialize_chosen_method)(), char* method_name) {
+int get_method_index(char* method_name) {
     for (int i = 0; i < METHODS_QTY; ++i) {
-        if (strcmp(method_name, GET_VAR_NAME(methods[i])) == 0) {
-            chosen_method = methods[i];
-            initialize_chosen_method = method_shared_slots_initializers[i];
-            return 0;
+        if (strcmp(method_name, method_names[i]) == 0) {
+            return i;
         }
     }
     return -1;

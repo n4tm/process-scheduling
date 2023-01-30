@@ -17,20 +17,22 @@ typedef struct buffer_t {
   void (*clear)();
 } buffer_t;
 
-buffer_t *buffer;
-char *buffer_content;
+static buffer_t* buffer;
+static char* buffer_content;
 
-char *_buffer;
-int *_current_buffer_size;
-FILE **_file;
+static char* _buffer;
+static int* _current_buffer_size;
+static FILE** _file;
 
 void _insert_item() {
   _buffer[*_current_buffer_size] = '#';
+  printf("inserting: %s\n", _buffer);
   if (*_current_buffer_size < BUFFER_CAPACITY - 1) (*_current_buffer_size)++;  
 }
 
 void _remove_item() {
   _buffer[*_current_buffer_size];
+  //printf("removing: %s\n", _buffer);
   if (*_current_buffer_size > 0) (*_current_buffer_size)--;
 }
 
@@ -49,8 +51,9 @@ void initialize_buffer() {
   buffer_content = ALLOCATE_SHARED_MEMORY(128);
   _buffer = ALLOCATE_SHARED_MEMORY(BUFFER_CAPACITY);
   buffer->clear();
-  _file = ALLOCATE_SHARED_MEMORY(sizeof(**_file));
-  *_file = fopen(BUFFER_FILE_PATH, "w");
+  _file = ALLOCATE_SHARED_MEMORY(sizeof(FILE*));
+  *_file = fopen(BUFFER_FILE_PATH, "w+");
+  fwrite("test", 1, 5, *_file);
   if (*_file == NULL) {
     printf("Error: failed to open file (path: %s).\n", BUFFER_FILE_PATH);
     exit(EXIT_FAILURE);
@@ -58,9 +61,9 @@ void initialize_buffer() {
 }
 
 void watch_buffer_file() {
-  const char *watch_command = "watch -n 0.1 cat buffer.txt";
+  const char* watch_command = "watch -n 0.1 cat buffer.txt";
   if (system(watch_command) == -1) {
-    printf("Error: failed when trying to watch for buffer file (used command: %s).\n", watch_command);
+    printf("Error: failed when trying to watch for buffer file (using command: %s).\n", watch_command);
     exit(EXIT_FAILURE);
   }
 }
@@ -70,7 +73,7 @@ void close_buffer_file() {
   munmap(_current_buffer_size, sizeof(int));
   munmap(buffer_content, 128);
   munmap(_buffer, BUFFER_CAPACITY);
-  munmap(_file, sizeof(**_file));
+  munmap(_file, sizeof(FILE*));
 
   if (fclose(*_file) == -1) {
     printf("Error: failed to close file (path: %s).\n", BUFFER_FILE_PATH);

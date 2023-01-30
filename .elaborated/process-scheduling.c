@@ -7,9 +7,9 @@
 #define AS_A_PRODUCER 0
 #define AS_A_CONSUMER 1
 
-void handle_args(int argc, char *argv[], int* producers_qty, int* consumers_qty);
+void handle_args(int argc, char* argv[], int* producers_qty, int* consumers_qty);
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
     int producers_qty = 1;
     int consumers_qty = 1;
 
@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-void handle_args(int argc, char *argv[], int* producers_qty, int* consumers_qty) {
+void handle_args(int argc, char* argv[], int* producers_qty, int* consumers_qty) {
     static struct option long_options[] = {
         { "producers", required_argument, 0, SPECIFIED_PRODUCERS_QTY },
         { "consumers", required_argument, 0, SPECIFIED_CONSUMERS_QTY },
