@@ -2,6 +2,7 @@
 #define CP_PROCESS_T_H
 
 #include "buffer.h"
+#include <stdbool.h>
 #include <sys/types.h>
 #include <sys/time.h>
 #include <time.h>
@@ -16,6 +17,12 @@ void construct_process(cp_process_t* const p, int type) {
   p->id = getpid();
   p->act = type == PRODUCER ? buffer.insert_item : buffer.remove_item;
   p->type = type;
+}
+
+pid_t get_other_pid(pid_t current_pid) {
+  pid_t parent_id = getppid();                     // get parent id
+  bool is_orphan = parent_id != current_pid-1;     // check if process is child or parent
+  return is_orphan ? current_pid + 1 : parent_id;  // child process will have parent pid + 1
 }
 
 void commit_to_buffer(cp_process_t* p) {

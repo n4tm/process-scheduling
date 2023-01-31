@@ -1,28 +1,29 @@
 #include "methods/peterson-solution.h"
+#include "methods/sleep_wakeup.h"
 #include <getopt.h>
 
 #define AS_A_PRODUCER 0
 #define AS_A_CONSUMER 1
-#define METHODS_QTY 1
+#define METHODS_QTY 2
 #define GET_VAR_NAME(var) #var
 
 const void (*methods[])(cp_process_t*) = {
     peterson_solution,
-    // sleep_wakeup,
+    sleep_wakeup,
     // semaphore,
     // monitor
 };
 
 const char* method_names[] = {
     "peterson_solution",
-    // "sleep_wakeup",
+    "sleep_wakeup",
     // "semaphore",
     // "monitor"
 };
 
 const void (*method_shared_slots_initializers[])() = {
-    initialize_peterson_solution_shared_slots
-    // initialize_sleep_wakeup_shared_slots,
+    initialize_peterson_solution_shared_slots,
+    initialize_sleep_wakeup_shared_slots,
     // initialize_semaphore_shared_slots,
     // initialize_monitor_shared_slots
 };
@@ -58,13 +59,11 @@ int main(int argc, char* argv[]) {
         construct_process(&producer, AS_A_PRODUCER);    // parent process is a producer
         while (true) {
             (*apply_chosen_method)(&producer);
-            sleep(1);
         }
     } else if (producer_pid == 0) {
         construct_process(&consumer, AS_A_CONSUMER);    // child process is a consumer
         while (true) {
             (*apply_chosen_method)(&consumer);
-            sleep(1);
         }
     }
 

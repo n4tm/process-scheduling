@@ -2,22 +2,16 @@
 #define PETERSON_SOLUTION_H
 
 #include "../types/cp_process_t.h"
-#include <stdbool.h>
 #include <unistd.h>
 
 static pid_t* turn;
 static bool* interested;
 
 void _enter_region(pid_t pid) {
-  pid_t parent_id = getppid();                    // get parent id
-  bool is_orphan = parent_id != pid-1;            // check if process is child or parent
-  pid_t other = is_orphan ? pid + 1 : parent_id;  // child process will have parent pid + 1
+  pid_t other = get_other_pid(pid);
   interested[pid%2] = true;
   *turn = pid;
-  while (*turn == pid && interested[other%2] == true) {
-    srand(time(NULL));
-    sleep((rand()%3)+1);                          // sleep from 1 to 3 seconds
-  }
+  while (*turn == pid && interested[other%2] == true) sleep(1);
 }
 
 void _leave_region(pid_t pid) {
@@ -26,10 +20,11 @@ void _leave_region(pid_t pid) {
 
 void peterson_solution(cp_process_t* process) {
   _enter_region(process->id);
-  process->act();                                 // insert or remove from buffer
+  process->act();             // insert or remove from buffer
   printf("[pid: %d] %s an item. Buffer: %s\n", process->id, 
          process->type == PRODUCER ? "Producer inserted" : "Consumer removed", _buffer);
-  commit_to_buffer(process);                      // commit changes to buffer file
+  commit_to_buffer(process);  // commit changes to buffer file
+  sleep(process->type == PRODUCER ? 1 : 3);
   _leave_region(process->id);
 }
 
