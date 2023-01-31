@@ -32,13 +32,13 @@ int items_number = 5;
 
 pid_t other;
 
-int sleep_process()
+void sleep_process()
 {
   pid_t pid = getpid();
   kill(pid, SIGSTOP);
 }
 
-int wakeup_process(pid_t process_id)
+void wakeup_process(pid_t process_id)
 {
   int status = kill(process_id, SIGCONT);
 
@@ -47,8 +47,6 @@ int wakeup_process(pid_t process_id)
     perror("Error: kill");
     exit(1);
   }
-
-  return 0;
 }
 
 /**

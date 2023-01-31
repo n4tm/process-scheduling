@@ -17,10 +17,27 @@
 
 void insert_item(char);
 void remove_item(void);
-int up(int *);
-int down(int *);
+void up(int *);
+void down(int *);
 
 pid_t other;
+
+void sleep_process()
+{
+  pid_t pid = getpid();
+  kill(pid, SIGSTOP);
+}
+
+void wakeup_process(pid_t process_id)
+{
+  int status = kill(process_id, SIGCONT);
+
+  if (status == -1)
+  {
+    perror("Error: kill");
+    exit(1);
+  }
+}
 
 char items[] = {'!', '@', '#', '$', '%'};
 int items_number = 5;
@@ -125,37 +142,35 @@ ProducerConsumerMonitor *shm_monitor;
 /**
  * Implementação de up para um semáforo, mantendo a atomicidade da instrução.
  */
-int up(int *semaphore)
+void up(int *semaphore)
 {
-    int ret;
-    do
+  int lock;
+  do
+  {
+    lock = *semaphore;
+    if (lock == BUFFER_SIZE)
     {
-        ret = *semaphore;
-        if (ret == BUFFER_SIZE)
-        {
-            return -1;
-        }
-    } while (!__sync_bool_compare_and_swap(semaphore, ret, ret + 1));
+      sleep_process();
+    }
+  } while (!__sync_bool_compare_and_swap(semaphore, lock, lock + 1));
 
-    return 0;
+  wakeup_process(other);
 }
 
 /**
  * Implementação de down para um semáforo, mantendo a atomicidade da instrução.
  */
-int down(int *semaphore)
+void down(int *semaphore)
 {
-    int ret;
-    do
+  int lock;
+  do
+  {
+    lock = *semaphore;
+    if (lock == 0)
     {
-        ret = *semaphore;
-        if (ret == 0)
-        {
-            return -1;
-        }
-    } while (!__sync_bool_compare_and_swap(semaphore, ret, ret - 1));
-
-    return 0;
+      sleep_process();
+    }
+  } while (!__sync_bool_compare_and_swap(semaphore, lock, lock - 1));
 }
 
 /**
