@@ -18,11 +18,11 @@ typedef struct buffer_t {
   void (*clear)();
 } buffer_t;
 
-buffer_t buffer;
+static buffer_t buffer;
 
 static char *_buffer;
 static int *_current_buffer_size;
-FILE* _file;
+static FILE* _file;
 
 void _insert_item() {
   _buffer[*_current_buffer_size] = '#';

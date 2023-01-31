@@ -45,7 +45,7 @@ int main(int argc, char* argv[]) {
     const void (*initialize_chosen_method)() = method_shared_slots_initializers[method_index];
     
     initialize_buffer();
-    (*initialize_chosen_method)();
+    (*initialize_chosen_method)();                      // allocate shared memory
 
     cp_process_t producer;
     cp_process_t consumer;
@@ -58,11 +58,13 @@ int main(int argc, char* argv[]) {
         construct_process(&producer, AS_A_PRODUCER);    // parent process is a producer
         while (true) {
             (*apply_chosen_method)(&producer);
+            sleep(1);
         }
     } else if (producer_pid == 0) {
         construct_process(&consumer, AS_A_CONSUMER);    // child process is a consumer
         while (true) {
             (*apply_chosen_method)(&consumer);
+            sleep(1);
         }
     }
 
