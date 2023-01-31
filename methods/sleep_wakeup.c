@@ -13,20 +13,29 @@
 #define FALSE 0
 
 #define SHM_SIZE sizeof(int)
-#define FILE_PATH "./buffer.txt"
+#define FILE_PATH "./buffer.txt" // Arquivo para escrever o conteúdo do item.
 
-#define N 20
+#define BUFFER_SIZE 20 // Tamanho do buffer
+#define SHM_KEY 42
 
-int *count;
+
+int shmid_count; // Id do seguimento de memória
+int *count; // Memoria compartilhada
 
 pid_t producer_pid;
 pid_t consumer_pid;
 
+/**
+ * Coloca o processo para dormir
+*/
 int sleep_process() {
     pid_t pid = getpid();
     kill(pid, SIGSTOP);
 }
 
+/**
+ * Acorda o processo
+*/
 int wakeup_process(pid_t process_id) {
     int status = kill(process_id, SIGCONT);
 
@@ -38,15 +47,10 @@ int wakeup_process(pid_t process_id) {
     return 0;
 }
 
-char* produce_item() { 
-	return "#";
-}
-
-void consume_item(char *item) {
-    
-}
-
-void insert_item(const char *item) {
+/**
+ * Escreve no arquivo de buffer
+*/
+void insert_item() {
     FILE *file;
     file = fopen(FILE_PATH, "a");
     if (file == NULL) {
@@ -54,11 +58,14 @@ void insert_item(const char *item) {
 		exit(1);
     }
 
-    fprintf(file, item);
+    fprintf(file, "#");
     fclose(file);
 }
 
-char *remove_item() {
+/**
+ * Deleta do arquivo de buffer
+*/
+void remove_item() {
     FILE *file;
     file = fopen(FILE_PATH, "a");
     if (file == NULL) {
@@ -71,36 +78,47 @@ char *remove_item() {
     ftruncate(fileno(file), position);
 
     fclose(file);
+}
 
-    return "#";
+/**
+ * Exibe as informaçõe na tela
+*/
+void print_info() {
+	printf("PID: %d\n", getpid());
+	printf("Buffer count: %d\n", *count);
+	printf("\n\n");
 }
 
 void producer() {
-	char *item;
-
 	while (TRUE) {
-		item = produce_item();
-		if (*count == N) sleep_process();
-		insert_item(item);
+		if (*count == BUFFER_SIZE) sleep_process();
+		insert_item();
 		*count += 1;
+
+        printf("Regiao Critica - Produtor\n");
+        print_info();
         sleep(1);
 		if (*count == 1) wakeup_process(consumer_pid);
+
     }
 }
 
 void consumer() {
-	char *item;
-	
 	while (TRUE) {
 		if (*count == 0) sleep_process();
-        item = remove_item();
+        remove_item();
         *count -= 1;
+
+        printf("Regiao Critica - Consumidor\n");
+        print_info();
         sleep(3);
-        if (*count == N-1) wakeup_process(producer_pid);
-        consume_item(item);
+        if (*count == BUFFER_SIZE - 1) wakeup_process(producer_pid);
 	}
 }
 
+/**
+ * Cria e zera o buffer
+*/
 void create_buffer() {
     FILE *file;
     file = fopen(FILE_PATH, "w");
@@ -112,46 +130,34 @@ void create_buffer() {
     fclose(file);
 }
 
-void init_count() {
-	int shm = shm_open("COUNT", O_CREAT | O_RDWR, 0666);
-	if (shm == -1) {
-		perror("Error: shm_open");
-		exit(1);
-	}
-
-	if (ftruncate(shm, SHM_SIZE) == -1) {
-		perror("Error: ftruncate");
-		exit(1);
-	}
-	
-	count = mmap(NULL, SHM_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, shm, 0);
-	if (count == MAP_FAILED) {
-		perror("Error: mmap");
-		exit(1);
-	};
-
-    *count = 0;
-    close(shm);
+/**
+ * Inicializa as vairáveis globais
+*/
+void init_global_variables() {
+	shmid_count = shmget(SHM_KEY, SHM_SIZE, IPC_CREAT | 0666);
+	count = (int *) shmat(shmid_count, NULL, 0);
+	*count = 0;
 }
 
 int main(int argc, char *argv[]) {
-    init_count();
+    init_global_variables();
     create_buffer();
 
     pid_t pid = fork();
 
     if (pid == 0) {
         consumer_pid = getppid();
-        printf("Producer with PID: %d\n", getpid());
         producer();
     } else {
         producer_pid = pid;
-        printf("Consumer with PID: %d\n", getpid());
         consumer();
     }
 
-	munmap(count, SHM_SIZE);
-	shm_unlink("COUNT");
+	/* Desmapeia a memória compartilhada */
+    shmdt(count);
+
+	/* Libera a memória alocada */
+    shmctl(shmid_count, IPC_RMID, NULL);
 
 	return 0;
 }
