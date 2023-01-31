@@ -8,16 +8,16 @@
 
 const void (*methods[])(cp_process_t*) = {
     peterson_solution,
-    // sleep_wakeup_action,
-    // semaphore_action,
-    // monitor_action
+    // sleep_wakeup,
+    // semaphore,
+    // monitor
 };
 
 const char* method_names[] = {
     "peterson_solution",
-    // "sleep_wakeup_action",
-    // "semaphore_action",
-    // "monitor_action"
+    // "sleep_wakeup",
+    // "semaphore",
+    // "monitor"
 };
 
 const void (*method_shared_slots_initializers[])() = {

@@ -27,6 +27,8 @@ void _leave_region(pid_t pid) {
 void peterson_solution(cp_process_t* process) {
   _enter_region(process->id);
   process->act();                                 // insert or remove from buffer
+  printf("[pid: %d] %s an item. Buffer: %s\n", process->id, 
+         process->type == PRODUCER ? "Producer inserted" : "Consumer removed", _buffer);
   commit_to_buffer(process);                      // commit changes to buffer file
   _leave_region(process->id);
 }
