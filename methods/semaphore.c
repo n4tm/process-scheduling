@@ -86,7 +86,6 @@ void remove_item() {
  * Exibe as informaçõe na tela
 */
 void print_info() {
-	printf("Regiao Critica - Produtor\n");
 	printf("PID: %d\n", getpid());
 	printf("Empty: %d\n", *empty);
 	printf("Full: %d\n", *full);
@@ -106,6 +105,7 @@ void producer() {
 		
 		up(full);
 
+    printf("Regiao Critica - Produtor\n");
 		print_info();
 		sleep(1);
 	}
@@ -122,6 +122,7 @@ void consumer(void) {
 		
 		up(empty);
 
+    printf("Regiao Critica - Consumidor\n");
 		print_info();
 		sleep(3);
 	}
