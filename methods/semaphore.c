@@ -27,6 +27,9 @@ int shmid_empty;
 int shmid_full;
 int shmid_mutex;
 
+char items[] = {'!', '@', '#', '$', '%'};
+int items_number = 5;
+
 pid_t other;
 
 int sleep_process()
@@ -85,7 +88,7 @@ void down(int *semaphore)
 /**
  * Escreve no arquivo de buffer
  */
-void insert_item()
+void insert_item(char item)
 {
   FILE *file;
   file = fopen(FILE_PATH, "a");
@@ -95,7 +98,7 @@ void insert_item()
     exit(1);
   }
 
-  fprintf(file, "#");
+  fputc(item, file);
   fclose(file);
 }
 
@@ -131,24 +134,34 @@ void print_info()
   printf("\n\n");
 }
 
+char produce_item()
+{
+  return items[rand() % items_number];
+}
+
 void producer()
 {
+  char item;
 
   while (TRUE)
   {
+    item = produce_item();
+
     down(empty);
     down(mutex);
 
+    printf("Regiao Critica - Produtor\n");
+
     if (*buffer_count < BUFFER_SIZE)
     {
-      insert_item();
+      insert_item(item);
       *buffer_count += 1;
     }
 
     up(mutex);
     up(full);
 
-    printf("Regiao Critica - Produtor\n");
+    printf("Item produzido: %c\n", item);
     print_info();
     sleep(1);
   }
@@ -161,6 +174,8 @@ void consumer(void)
     down(full);
     down(mutex);
 
+    printf("Regiao Critica - Consumidor\n");
+
     if (*buffer_count > 0)
     {
       remove_item();
@@ -170,7 +185,7 @@ void consumer(void)
     up(mutex);
     up(empty);
 
-    printf("Regiao Critica - Consumidor\n");
+    printf("Um item foi consumido\n");
     print_info();
     sleep(3);
   }
